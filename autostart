@@ -1,175 +1,83 @@
-#!/bin/bash
+#!/usr/bin/env python
+# vim: set fileencoding=utf8 :
 
-# this is a simple config for herbstluftwm
+import herbstluft
+import subprocess
 
-hc() {
-    herbstclient "$@"
-}
+with herbstluft.HerbstluftChain() as hc:
+    #we want alt as our mod. mod4 would give us the super(windows) key
+    mod=herbstluft.mod1
+    shift=herbstluft.shift
+    enter=herbstluft.enter
+    control=herbstluft.control
+    tab=herbstluft.tab
 
-hc emit_hook reload
+    #let the daemons know that the autostart file is being reloaded
+    hc.emit_hook('reload')
 
-xsetroot -solid '#5A8E3A'
+    #lock it to speed things up
+    hc.lock()
 
-# remove all existing keybindings
-hc keyunbind --all
+    #reset keybindings then set them up
+    hc.keyunbind('all')
+    hc.keybind(mod+shift+'q','close')
+    hc.keybind(mod+shift+'r','reload')
+    hc.keybind(mod+shift+'e','quit')
+    hc.keybind(mod+enter,'spawn xterm')
+    hc.keybind(mod+'d','spawn dmenu_run')
 
-# keybindings
-# if you have a super key you will be much happier with Mod set to Mod4
-Mod=Mod1    # Use alt as the main modifier
-#Mod=Mod4   # Use the super key as the main modifier
+    hc.keybind('XF86AudioRaiseVolume','spawn amixer -q set Master 5%+')
+    hc.keybind('XF86AudioLowerVolume','spawn amixer -q set Master 5%-')
+    hc.keybind('XF86AudioMute','spawn amixer -q set Master toggle')
+    hc.keybind('XF86MonBrightnessUp','spawn xbacklight +5')
+    hc.keybind('XF86MonBrightnessDown','spawn xbacklight -5')
 
-hc keybind $Mod-Shift-q close
-hc keybind $Mod-Shift-r reload
-hc keybind $Mod-Shift-e quit
-hc keybind $Mod-Return spawn xterm
-hc keybind $Mod-d spawn dmenu_run
-hc keybind XF86AudioRaiseVolume spawn amixer -q set Master 5%+
-hc keybind XF86AudioLowerVolume spawn amixer -q set Master 5%-
-hc keybind XF86AudioMute spawn amixer -q set Master toggle
-hc keybind XF86MonBrightnessUp spawn xbacklight +5
-hc keybind XF86MonBrightnessDown spawn xbacklight -5
+    hc.keybind(mod+'h','focus left')
+    hc.keybind(mod+'l','focus right')
+    hc.keybind(mod+'j','focus down')
+    hc.keybind(mod+'k','focus up')
 
+    hc.keybind(mod+shift+'h','shift left')
+    hc.keybind(mod+shift+'l','shift right')
+    hc.keybind(mod+shift+'j','shift down')
+    hc.keybind(mod+shift+'k','shift up')
 
-# basic movement
-# focusing clients
-hc keybind $Mod-Left  focus left
-hc keybind $Mod-Down  focus down
-hc keybind $Mod-Up    focus up
-hc keybind $Mod-Right focus right
-hc keybind $Mod-h     focus left
-hc keybind $Mod-j     focus down
-hc keybind $Mod-k     focus up
-hc keybind $Mod-l     focus right
+    hc.keybind(mod+control+'space','split explode')
+    hc.keybind(mod+'u','split bottom 0.5')
+    hc.keybind(mod+'o','split right 0.5')
 
-# moving clients
-hc keybind $Mod-Shift-Left  shift left
-hc keybind $Mod-Shift-Down  shift down
-hc keybind $Mod-Shift-Up    shift up
-hc keybind $Mod-Shift-Right shift right
-hc keybind $Mod-Shift-h     shift left
-hc keybind $Mod-Shift-j     shift down
-hc keybind $Mod-Shift-k     shift up
-hc keybind $Mod-Shift-l     shift right
+    resizestep=0.05
+    hc.keybind(mod+control+'h','resize left +'+str(resizestep))
+    hc.keybind(mod+control+'l','resize right +'+str(resizestep))
+    hc.keybind(mod+control+'j','resize down +'+str(resizestep))
+    hc.keybind(mod+control+'k','resize up +'+str(resizestep))
 
-# splitting frames
-# create an empty frame at the specified direction
-hc keybind $Mod-u       split   bottom  0.5
-hc keybind $Mod-o       split   right   0.5
-# let the current frame explode into subframes
-hc keybind $Mod-Control-space split explode
+    hc.keybind(mod+'r','remove')
+    hc.keybind(mod+'space','cycle_layout')
+    hc.keybind(mod+'s','floating toggle')
+    hc.keybind(mod+'f','fullscreen toggle')
+    hc.keybind(mod+'p','pseudotile toggle')
 
-# resizing frames
-resizestep=0.05
-hc keybind $Mod-Control-h       resize left +$resizestep
-hc keybind $Mod-Control-j       resize down +$resizestep
-hc keybind $Mod-Control-k       resize up +$resizestep
-hc keybind $Mod-Control-l       resize right +$resizestep
-hc keybind $Mod-Control-Left    resize left +$resizestep
-hc keybind $Mod-Control-Down    resize down +$resizestep
-hc keybind $Mod-Control-Up      resize up +$resizestep
-hc keybind $Mod-Control-Right   resize right +$resizestep
+    hc.keybind(mod+tab,'cycle_all +1')
+    hc.keybind(mod+shift+tab,'cycle_all -1')
+    hc.keybind(mod+'c','cycle')
+    hc.keybind(mod+'i','jumpto urgent')
 
-# tags
-tag_names=( {1..9} )
-tag_keys=( {1..9} 0 )
+    #skipping the tag stuff starting at line 86 of the autostart.sh
 
-hc rename default "${tag_names[0]}" || true
-for i in ${!tag_names[@]} ; do
-    hc add "${tag_names[$i]}"
-    key="${tag_keys[$i]}"
-    if ! [ -z "$key" ] ; then
-        hc keybind "$Mod-$key" use_index "$i"
-        hc keybind "$Mod-Shift-$key" move_index "$i"
-    fi
-done
+    #skipping the mouse stuff from line 98 in autostart.sh
+    #i don't really get how the mouse works tbh, so just leave it out
+    hc.mouseunbind('all')
 
-# cycle through tags
-hc keybind $Mod-period use_index +1 --skip-visible
-hc keybind $Mod-comma  use_index -1 --skip-visible
+    #theming stuff to go here, from line 111 in autostart.sh
 
-# layouting
-hc keybind $Mod-r remove
-hc keybind $Mod-space cycle_layout 1
-hc keybind $Mod-s floating toggle
-hc keybind $Mod-f fullscreen toggle
-hc keybind $Mod-p pseudotile toggle
+    #rule stuff needs to be filled in here. from line 144
 
-# mouse
-hc mouseunbind --all
-hc mousebind $Mod-Button1 move
-hc mousebind $Mod-Button2 zoom
-hc mousebind $Mod-Button3 resize
+    #all done, unlock and let her rip
+    hc.unlock()
 
-# focus
-hc keybind $Mod-BackSpace   cycle_monitor
-hc keybind $Mod-Tab         cycle_all +1
-hc keybind $Mod-Shift-Tab   cycle_all -1
-hc keybind $Mod-c cycle
-hc keybind $Mod-i jumpto urgent
+    #set tree_style '╾│ ├└╼─┐'
 
-# theme
-hc attr theme.tiling.reset 1
-hc attr theme.floating.reset 1
-hc set frame_border_active_color '#222222'
-hc set frame_border_normal_color '#101010'
-hc set frame_bg_normal_color '#565656'
-hc set frame_bg_active_color '#345F0C'
-hc set frame_border_width 1
-hc set always_show_frame 1
-hc set frame_bg_transparent 1
-hc set frame_transparent_width 5
-hc set frame_gap 4
-
-hc attr theme.active.color '#9fbc00'
-hc attr theme.normal.color '#454545'
-hc attr theme.urgent.color orange
-hc attr theme.inner_width 1
-hc attr theme.inner_color black
-hc attr theme.border_width 3
-hc attr theme.floating.border_width 4
-hc attr theme.floating.outer_width 1
-hc attr theme.floating.outer_color black
-hc attr theme.active.inner_color '#3E4A00'
-hc attr theme.active.outer_color '#3E4A00'
-hc attr theme.background_color '#141414'
-
-hc set window_gap 0
-hc set frame_padding 0
-hc set smart_window_surroundings 0
-hc set smart_frame_surroundings 1
-hc set mouse_recenter_gap 0
-hc set focus_follows_mouse 1
-
-# rules
-hc unrule -F
-#hc rule class=XTerm tag=3 # move all xterms to tag 3
-hc rule focus=on # normally focus new clients
-#hc rule focus=off # normally do not focus new clients
-# give focus to most common terminals
-#hc rule class~'(.*[Rr]xvt.*|.*[Tt]erm|Konsole)' focus=on
-hc rule windowtype~'_NET_WM_WINDOW_TYPE_(DIALOG|UTILITY|SPLASH)' pseudotile=on
-hc rule windowtype='_NET_WM_WINDOW_TYPE_DIALOG' focus=on
-hc rule windowtype~'_NET_WM_WINDOW_TYPE_(NOTIFICATION|DOCK|DESKTOP)' manage=off
-
-# unlock, just to be sure
-hc unlock
-
-herbstclient set tree_style '╾│ ├└╼─┐'
-
-# do multi monitor setup here, e.g.:
-# hc set_monitors 1280x1024+0+0 1280x1024+1280+0
-# or simply:
-# hc detect_monitors
-
-# find the panel
-panel=~/.config/herbstluftwm/panel.sh
-[ -x "$panel" ] || panel=/etc/xdg/herbstluftwm/panel.sh
-for monitor in $(herbstclient list_monitors | cut -d: -f1) ; do
-    # start it on each monitor
-    "$panel" $monitor &
-done
-
-# misc housekeeping
-xli -onroot Wallpapers/good-morning.jpg
-xset -dpms s off
-xrdb .Xresources
+subprocess.call(['xli','-onroot','Wallpapers/good-morning.jpg'])
+subprocess.call(['xset','-dpms','s','off'])
+subprocess.call(['xrdb','.Xresources'])
