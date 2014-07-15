@@ -48,6 +48,26 @@ class HerbstluftClient(object):
     def unlock(self):
         self.do_command('unlock')
 
+    #tag stuff
+    def add(self,tag):
+        self.do_command('add '+tag)
+    def use(self,tag):
+        self.do_command('use '+tag)
+    def use_index(self,index):
+        self.do_command('use_index '+str(index))
+    def use_previous(self):
+        self.do_command('use_previous')
+    def merge_tag(self,tag,target=''):
+        self.do_command('merge_tag '+tag+' '+target)
+    def rename(self,old_tag,new_tag):
+        self.do_command('rename '+old_tag+' '+new_tag)
+    def move(self,tag):
+        self.do_command('move '+tag)
+    def move_index(self,index):
+        self.do_command('move_index '+str(index))
+    #skipping lock and unlock for tags for now
+    #will do multimonitor stuff later
+    
     #get/get/toggle name value pairs
 
 class HerbstluftChain(HerbstluftClient):

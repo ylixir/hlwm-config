@@ -64,6 +64,10 @@ with herbstluft.HerbstluftChain() as hc:
     hc.keybind(mod+'i','jumpto urgent')
 
     #skipping the tag stuff starting at line 86 of the autostart.sh
+    for i in range(1,10):
+        hc.add(str(i))
+        hc.keybind(mod+str(i),'use_index '+str(i-1))
+    hc.merge_tag('default')
 
     #skipping the mouse stuff from line 98 in autostart.sh
     #i don't really get how the mouse works tbh, so just leave it out
