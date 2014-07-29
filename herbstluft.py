@@ -68,7 +68,23 @@ class HerbstluftClient(object):
     #skipping lock and unlock for tags for now
     #will do multimonitor stuff later
     
-    #get/get/toggle name value pairs
+    #attribute stuff
+    def attr(self,path='',new_value=''):
+        if '' != path:
+            path = ' ' + path
+        if '' != new_value:
+            new_value =' ' + str(new_value)
+        self.do_command('attr'+path+new_value)
+    def get_attr(self,attribute):
+        self.do_command('get_attr '+attribute)
+    def set_attr(self,attribute,new_value):
+        self.do_command('get_attr '+attribute+' '+str(new_value))
+
+    #get/set/toggle name value pairs
+    def set(self,name,value):
+        self.do_command('set '+name+' '+str(value))
+    def get(self,name):
+        self.do_command('get '+name)
 
 class HerbstluftChain(HerbstluftClient):
     command_chain=''

@@ -77,7 +77,31 @@ with herbstluft.HerbstluftChain() as hc:
     #i don't really get how the mouse works tbh, so just leave it out
     hc.mouseunbind('all')
 
-    #theming stuff to go here, from line 111 in autostart.sh
+    #reset floating and tiling themes
+    hc.attr(path='theme.tiling.reset',new_value='1')
+    hc.attr(path='theme.floating.reset',new_value='1')
+
+    #okay now the theme
+    hc.attr(path='theme.background_color',new_value='#1e1e27')
+
+    hc.attr(path='theme.normal.color',new_value='#cfbfad')
+    hc.attr(path='theme.inner_color',new_value='#1e1e27')
+    hc.attr(path='theme.outer_color',new_value='#1e1e27')
+
+    hc.attr(path='theme.floating.outer_color',new_value='#1e1e27')
+
+    #hc.attr(path='theme.active.color',new_value='#c080d0')
+    hc.attr(path='theme.active.color',new_value='#808bed')
+   
+    hc.attr(path='theme.urgent.color',new_value='#f0ad6d')
+
+    hc.attr(path='theme.border_width',new_value=3)
+    hc.attr(path='theme.inner_width',new_value=1)
+    hc.attr(path='theme.outer_width',new_value=1)
+
+    hc.attr(path='theme.floating.border_width',new_value=4)
+    hc.attr(path='theme.floating.inner_width',new_value=1)
+    hc.attr(path='theme.floating.outer_width',new_value=1)
 
     #rule stuff needs to be filled in here. from line 144
 
