@@ -82,19 +82,28 @@ with herbstluft.HerbstluftChain() as hc:
     hc.attr(path='theme.floating.reset',new_value='1')
 
     #okay now the theme
+    hc.set('frame_bg_transparent',1)
+    hc.set('frame_transparent_width',1)
     hc.attr(path='theme.background_color',new_value='#1e1e27')
 
+    hc.set('frame_border_normal_color','#1e1e27')
+    hc.set('frame_bg_normal_color','#cfbfad')
     hc.attr(path='theme.normal.color',new_value='#cfbfad')
     hc.attr(path='theme.inner_color',new_value='#1e1e27')
     hc.attr(path='theme.outer_color',new_value='#1e1e27')
+    hc.set('always_show_frame',1)
 
     hc.attr(path='theme.floating.outer_color',new_value='#1e1e27')
 
     #hc.attr(path='theme.active.color',new_value='#c080d0')
+    hc.set('frame_border_active_color','#1e1e27')
+    hc.set('frame_bg_active_color','#808bed')
     hc.attr(path='theme.active.color',new_value='#808bed')
    
     hc.attr(path='theme.urgent.color',new_value='#f0ad6d')
 
+    hc.set('frame_border_width',1)
+    hc.set('frame_gap',4)
     hc.attr(path='theme.border_width',new_value=3)
     hc.attr(path='theme.inner_width',new_value=1)
     hc.attr(path='theme.outer_width',new_value=1)
@@ -103,12 +112,28 @@ with herbstluft.HerbstluftChain() as hc:
     hc.attr(path='theme.floating.inner_width',new_value=1)
     hc.attr(path='theme.floating.outer_width',new_value=1)
 
-    #rule stuff needs to be filled in here. from line 144
+    hc.set('window_gap',0)
+    hc.set('frame_padding',0)
+    hc.set('smart_window_surroundings',0)
+    hc.set('smart_frame_surroundings',1)
+    hc.set('mouse_recenter_gap',0)
+    hc.set('focus_follows_mouse',1)
+
+    #rule stuff
+    hc.unrule('all')
+    hc.rule('focus=on') #focus new clients
+    hc.rule("windowtype~'_NET_WM_WINDOW_TYPE_(DIALOG|UTILITY|SPLASH)' pseudotile=on")
+    hc.rule("windowtype='_NET_WM_WINDOW_TYPE_DIALOG' focus=on")
+    hc.rule("windowtype~'_NET_WM_WINDOW_TYPE_(NOTIFICATION|DOCK|DESKTOP)' manage=off")
 
     #all done, unlock and let her rip
     hc.unlock()
 
     #set tree_style '╾│ ├└╼─┐'
+    hc.set('tree_style','╾│ ├└╼─┐')
+
+import panel
+panel.spawn_panel()
 
 subprocess.call(['xli','-onroot','Wallpapers/good-morning.jpg'])
 subprocess.call(['xset','-dpms','s','off'])

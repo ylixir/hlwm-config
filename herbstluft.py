@@ -1,4 +1,5 @@
 import subprocess
+import threading
 
 mod1='Mod1+'
 mod4='Mod4+'
@@ -14,7 +15,14 @@ down='Down'
 class HerbstluftClient(object):
     #execute the command
     def do_command(self,command):
-        subprocess.call(['herbstclient']+command.split(' '))
+        try:
+            hc_output=subprocess.check_output(['herbstclient']+command.split(' '))
+        except CalledProcessError as e:
+            hc_output=e.output
+            print 'herbstclient returned '+str(e.returncode)
+
+        return hc_output
+        #subprocess.call(['herbstclient']+command.split(' '))
 
     #keybinding commands
     def keybind(self,key,command):
@@ -65,6 +73,9 @@ class HerbstluftClient(object):
         self.do_command('move '+tag)
     def move_index(self,index):
         self.do_command('move_index '+str(index))
+    def tag_status(self,monitor=''):
+        return self.do_command('tag_status '+str(monitor)).split()
+
     #skipping lock and unlock for tags for now
     #will do multimonitor stuff later
     
@@ -74,9 +85,9 @@ class HerbstluftClient(object):
             path = ' ' + path
         if '' != new_value:
             new_value =' ' + str(new_value)
-        self.do_command('attr'+path+new_value)
+        return self.do_command('attr'+path+new_value)
     def get_attr(self,attribute):
-        self.do_command('get_attr '+attribute)
+        return self.do_command('get_attr '+attribute)
     def set_attr(self,attribute,new_value):
         self.do_command('get_attr '+attribute+' '+str(new_value))
 
@@ -84,7 +95,38 @@ class HerbstluftClient(object):
     def set(self,name,value):
         self.do_command('set '+name+' '+str(value))
     def get(self,name):
-        self.do_command('get '+name)
+        return self.do_command('get '+name)
+
+    #rules
+    def unrule(self,label):
+        command='unrule '
+        if 'all'==label:
+           command+='--all'
+        else:
+            command+=label
+        self.do_command(command)
+    def rule(self,rule):
+        self.do_command('rule '+rule)
+
+    #monitor stuff
+    def monitor_rect(self,monitor=0,with_pad=True):
+        #return [x,y,w,h]
+        command='monitor_rect '
+        if False==with_pad:
+            command+='-p '
+        command+=str(monitor)
+        rect=self.do_command(command)
+        return rect.split()
+    def pad(self,monitor,pad_up=0,pad_right=0,pad_down=0,pad_left=0):
+        command='pad '
+        command+=str(monitor)+' '
+        command+=str(pad_up)+' '
+        command+=str(pad_right)+' '
+        command+=str(pad_down)+' '
+        command+=str(pad_left)
+        self.do_command(command)
+    def list_padding(self,monitor=''):
+        return self.do_command('list_padding '+str(monitor)).split()
 
 class HerbstluftChain(HerbstluftClient):
     command_chain=''
@@ -99,3 +141,21 @@ class HerbstluftChain(HerbstluftClient):
     def do_command(self,command):
         self.command_chain+=self.separater+command
 
+class HerbstluftTimer(threading.Thread):
+    def __init__(self,seconds=5):
+        super(HerbstluftTimer,self).__init__()
+        self.sleep_length=seconds
+        self.event=threading.Event()
+
+    def run(self):
+        hc = HerbstluftClient()
+        while True != self.event.wait(self.sleep_length):
+            hc.emit_hook('timer_event')
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self,type,value,traceback):
+        self.event.set()
+        self.join()
