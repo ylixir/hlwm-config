@@ -1,5 +1,6 @@
 # coding=utf8
 import os
+import re
 import subprocess
 import time
 import locale
@@ -7,11 +8,14 @@ import herbstluft
 
 ink_blue='#808bed'
 ink_black='#1e1e27'
-#ink_purple='#c080d0'
-ink_purple='#ff8bff'
-ink_red='#f0ad6d'
+ink_purple='#c080d0'
+ink_bright_purple='#ff8bff'
+#ink_red='#6d3030'
+ink_red='#af4f4b'
 ink_white='#cfbfad'
 ink_orange='#cd8b00'
+ink_bright_green='#00ff8b'
+ink_green='#409090'
 
 #from stack overflow, since textwidth seems to have trouble with
 #unicode stuffs
@@ -25,6 +29,7 @@ def strip_unicode(s):
 
 class Dzen2(object):
     aligned_text = {'l':'','r':'','c':''}
+    aligned_width = {'l':0,'r':30,'c':0}
     def __init__(self,width,height,x=0,y=0,font='-*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*',bg_color='#000000',fg_color='#ffffff',align='l'):
         super(Dzen2,self).__init__()
         self.font=font
@@ -80,6 +85,14 @@ class Dzen2(object):
         #self.is_running()
         #self.process.stdin.write(text)
         self.aligned_text[self.alignment]+=text
+        #figure out the width of the text
+        #textwidth doesn't seem to do well with accents and whatnot
+        #so we try to handle that
+        working=text
+        working=working.decode('utf-8')
+        working=strip_unicode(working)
+        working=working.encode('utf-8')
+        self.aligned_width[self.alignment]+=int(subprocess.check_output([self.textwidth_path,self.font,working]))
     def set_foreground(self,color=''):
         #self.is_running()
         #self.process.stdin.write('^fg('+color+')')
@@ -100,29 +113,13 @@ class Dzen2(object):
         self.process.stdin.write('^p(_LEFT)')
         self.process.stdin.write(self.aligned_text['l'])
 
-        #figure out the width of the centered text
-        #textwidth doesn't seem to do well with accents and whatnot
-        #so we try to handle that
-        working=self.aligned_text['c']
-        working=working.decode('utf-8')
-        working=strip_unicode(working)
-        working=working.encode('utf-8')
-        text_width=subprocess.check_output([self.textwidth_path,self.font,working])
         #write out the centered text
         self.process.stdin.write('^p(_CENTER)')
-        self.process.stdin.write('^p(-'+str(int(text_width)/2)+')')
+        self.process.stdin.write('^p(-'+str(self.aligned_width['c']/2)+')')
         self.process.stdin.write(self.aligned_text['c'])
-        #figure out the width of the right aligned text
-        #textwidth doesn't seem to do well with accents and whatnot
-        #so we try to handle that
-        working=self.aligned_text['r']
-        working=working.decode('utf-8')
-        working=strip_unicode(working)
-        working=working.encode('utf-8')
-        text_width=subprocess.check_output([self.textwidth_path,self.font,working])
         #write out the right aligned text
         self.process.stdin.write('^p(_RIGHT)')
-        self.process.stdin.write('^p(-'+str(int(text_width))+')')
+        self.process.stdin.write('^p(-'+str(self.aligned_width['r'])+')')
         self.process.stdin.write(self.aligned_text['r'])
 
         #write out the newline and flush the buffer to display everything
@@ -130,23 +127,56 @@ class Dzen2(object):
         self.process.stdin.flush()
         #don't forget to reset our string buffers
         self.aligned_text = {'l':'','r':'','c':''}
+        self.aligned_width = {'l':0,'r':30,'c':0}
 
 def get_date():
-        return time.strftime('%a %d %b %Y %R %Z')
+    return time.strftime('%a %d %b %Y %R %Z')
 def get_volume():
-        return 10
+    percent=re.compile('[0-9]+%')
+    mute=re.compile('\[o[nf]')
+    result=subprocess.check_output(['amixer','get','Master'])
+    vol=int(percent.search(result).group()[:-1])
+    #is it muted?
+    ismute=False
+    if 'f'==mute.search(result).group()[-1:]:
+        ismute=True
+    return (vol,ismute)
+def get_brightness():
+    try:
+        with file('/sys/class/backlight/acpi_video0/brightness') as f:
+            brightness=f.read()
+    except:
+        brightness=0
+    return int(brightness)
+#returns (power_now,energy_now,energy_full_design,status)
+def get_battery():
+    try:
+        with file('/sys/class/power_supply/BAT0/energy_now') as f:
+            energy_now=int(f.read())
+        with file('/sys/class/power_supply/BAT0/power_now') as f:
+            power_now=int(f.read())
+        with file('/sys/class/power_supply/BAT0/energy_full_design') as f:
+            energy_full_design=int(f.read())
+        with file('/sys/class/power_supply/BAT0/status') as f:
+            status=f.read().strip()
+    except:
+        energy_now=1
+        power_now=1
+        energy_full_design=1
+        status='Discharging'
+    return (power_now,energy_now,energy_full_design,status)
 
 def print_tags(dz,tags):
     bg_color = { '.':ink_black,
                   ':':ink_black,
-                  '+':ink_purple,
-                  '#':ink_purple,
+                  '+':ink_bright_purple,
+                  '#':ink_bright_purple,
                   '-':ink_black,
                   '%':ink_black,
                   '!':ink_black
                 }
     fg_color = { '.':ink_white,
-                  ':':ink_purple,
+                  ':':ink_bright_purple,
                   '+':ink_black,
                   '#':ink_black,
                   '-':ink_blue,
@@ -182,17 +212,83 @@ def herbst_event_loop():
         #get the initial values for everything
         tags=hc.tag_status()
         date=get_date()
+        window_title=''
         while 'reload' != hc_event:
             if 'tag'==hc_event[:3]:
                 tags=hc.tag_status()
             elif 'timer_event'==hc_event:
                 date=get_date()
+            elif 'volume'==hc_event[:6]:
+                if 'raise'==hc_event[7:]:
+                    command='5%+'
+                elif 'lower'==hc_event[7:]:
+                    command='5%-'
+                elif 'mute'==hc_event[7:]:
+                    command='toggle'
+                subprocess.call(['amixer','-q','set','Master',command])
+            elif 'brightness'==hc_event[:10]:
+                if 'up'==hc_event[11:]:
+                    command='+5'
+                elif 'down'==hc_event[11:]:
+                    command='-5'
+                subprocess.call(['xbacklight',command])
+            elif 'focus_changed'==hc_event[:13] or 'window_title_changed'==hc_event[:20]:
+                window_title=hc_event.split('\t')[2]
+            elif 'quit_panel'==hc_event:
+                break
+            elif 'togglehidepanel'==hc_event:
+                #TODO
+                pass
+            dz2.set_alignment('center')
+            dz2.print_text(window_title)
             dz2.set_alignment('left')
             print_tags(dz2,tags)
             dz2.set_alignment('right')
-            dz2.print_text('♪')
-            dz2.set_foreground()
             dz2.set_background()
+            #returns (power_now,energy_now,energy_full_design,status)
+            battery=get_battery()
+            dz2.print_text('{:.2f}W '.format(float(battery[0])/1000000))
+            dz2.print_text(str(battery[1]*100/battery[2])+'% ')
+            if 'D'==battery[3][0]:
+                time=str(battery[1]*60/battery[0]%60)
+                while len(time)<2:
+                    time='0'+time
+                time=str(battery[1]/battery[0])+':'+time
+            elif 'C'==battery[3][0]:
+                time=str((battery[2]-battery[1])*60/battery[0]%60)
+                while len(time)<2:
+                    time='0'+time
+                time=str((battery[2]-battery[1])/battery[0])+':'+time
+            dz2.print_text(time)
+            dz2.set_foreground(ink_blue)
+            dz2.print_text(' | ')
+            brightness=get_brightness()
+            if 10>brightness:
+                dz2.set_foreground(ink_green)
+            elif 25>brightness:
+                dz2.set_foreground(ink_purple)
+            elif 50>brightness:
+                dz2.set_foreground(ink_orange)
+            else:
+                dz2.set_foreground(ink_red)
+            dz2.print_text(str(get_brightness()))
+            dz2.print_text('☼')
+            dz2.set_foreground(ink_blue)
+            dz2.print_text(' | ')
+            volume=get_volume()
+            if 0==volume[0] or False==volume[1]:
+                dz2.set_foreground(ink_red)
+            elif 30>volume[0]:
+                dz2.set_foreground(ink_orange)
+            elif 60>volume[0]:
+                dz2.set_foreground(ink_purple)
+            else:
+                dz2.set_foreground(ink_green)
+            dz2.print_text(str(volume[0]))
+            dz2.print_text('♪')
+            dz2.set_foreground(ink_blue)
+            dz2.print_text(' | ')
+            dz2.set_foreground()
             dz2.print_text(date)
             dz2.flush()
 
