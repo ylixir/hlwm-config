@@ -29,7 +29,7 @@ def strip_unicode(s):
 
 class Dzen2(object):
     aligned_text = {'l':'','r':'','c':''}
-    aligned_width = {'l':0,'r':30,'c':0}
+    aligned_width = {'l':0,'r':50,'c':0}
     def __init__(self,width,height,x=0,y=0,font='-*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*',bg_color='#000000',fg_color='#ffffff',align='l'):
         super(Dzen2,self).__init__()
         self.font=font
@@ -127,7 +127,7 @@ class Dzen2(object):
         self.process.stdin.flush()
         #don't forget to reset our string buffers
         self.aligned_text = {'l':'','r':'','c':''}
-        self.aligned_width = {'l':0,'r':30,'c':0}
+        self.aligned_width = {'l':0,'r':50,'c':0}
 
 def get_date():
     return time.strftime('%a %d %b %Y %R %Z')
@@ -187,6 +187,17 @@ def print_tags(dz,tags):
         dz.set_foreground(fg_color[i[0]])
         dz.set_background(bg_color[i[0]])
         dz.print_text(i[1:])
+def print_window_title(dz,title):
+    pass
+#battery is (power_now,energy_now,energy_full_design,status)
+def print_battery_status(dz,battery):
+    pass
+def print_screen_brightness(dz,brightness):
+    pass
+def print_sound_volume(dz,volume):
+    pass
+def print_date(dz,date):
+    pass
 
 def herbst_event_loop():
     #shouldn't this just happen automatically? srsly
@@ -213,11 +224,15 @@ def herbst_event_loop():
         tags=hc.tag_status()
         date=get_date()
         window_title=''
+        battery=get_battery()
+        brightness=get_brightness()
+        volume=get_volume()
         while 'reload' != hc_event:
             if 'tag'==hc_event[:3]:
                 tags=hc.tag_status()
             elif 'timer_event'==hc_event:
                 date=get_date()
+                battery=get_battery()
             elif 'volume'==hc_event[:6]:
                 if 'raise'==hc_event[7:]:
                     command='5%+'
@@ -226,12 +241,14 @@ def herbst_event_loop():
                 elif 'mute'==hc_event[7:]:
                     command='toggle'
                 subprocess.call(['amixer','-q','set','Master',command])
+                volume=get_volume()
             elif 'brightness'==hc_event[:10]:
                 if 'up'==hc_event[11:]:
                     command='+5'
                 elif 'down'==hc_event[11:]:
                     command='-5'
                 subprocess.call(['xbacklight',command])
+                brightness=get_brightness()
             elif 'focus_changed'==hc_event[:13] or 'window_title_changed'==hc_event[:20]:
                 window_title=hc_event.split('\t')[2]
             elif 'quit_panel'==hc_event:
@@ -246,23 +263,28 @@ def herbst_event_loop():
             dz2.set_alignment('right')
             dz2.set_background()
             #returns (power_now,energy_now,energy_full_design,status)
-            battery=get_battery()
+            #battery=get_battery()
             dz2.print_text('{:.2f}W '.format(float(battery[0])/1000000))
             dz2.print_text(str(battery[1]*100/battery[2])+'% ')
+            #Discharging
             if 'D'==battery[3][0]:
                 time=str(battery[1]*60/battery[0]%60)
                 while len(time)<2:
                     time='0'+time
                 time=str(battery[1]/battery[0])+':'+time
+            #Charging
             elif 'C'==battery[3][0]:
                 time=str((battery[2]-battery[1])*60/battery[0]%60)
                 while len(time)<2:
                     time='0'+time
                 time=str((battery[2]-battery[1])/battery[0])+':'+time
+            #Full
+            else:
+                time=battery[3]
             dz2.print_text(time)
             dz2.set_foreground(ink_blue)
             dz2.print_text(' | ')
-            brightness=get_brightness()
+            #brightness=get_brightness()
             if 10>brightness:
                 dz2.set_foreground(ink_green)
             elif 25>brightness:
@@ -275,7 +297,7 @@ def herbst_event_loop():
             dz2.print_text('☼')
             dz2.set_foreground(ink_blue)
             dz2.print_text(' | ')
-            volume=get_volume()
+            #volume=get_volume()
             if 0==volume[0] or False==volume[1]:
                 dz2.set_foreground(ink_red)
             elif 30>volume[0]:
