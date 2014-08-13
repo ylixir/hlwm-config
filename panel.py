@@ -250,7 +250,11 @@ def herbst_event_loop():
                 subprocess.call(['xbacklight',command])
                 brightness=get_brightness()
             elif 'focus_changed'==hc_event[:13] or 'window_title_changed'==hc_event[:20]:
-                window_title=hc_event.split('\t')[2]
+                splitted=hc_event.split('\t')
+                if 3<=len(splitted):
+                    window_title=splitted[2]
+                else:
+                    window_title=''
             elif 'quit_panel'==hc_event:
                 break
             elif 'togglehidepanel'==hc_event:
@@ -298,7 +302,7 @@ def herbst_event_loop():
             dz2.set_foreground(ink_blue)
             dz2.print_text(' | ')
             #volume=get_volume()
-            if 0==volume[0] or False==volume[1]:
+            if 0==volume[0] or True==volume[1]:
                 dz2.set_foreground(ink_red)
             elif 30>volume[0]:
                 dz2.set_foreground(ink_orange)
