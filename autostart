@@ -72,6 +72,7 @@ with herbstluft.HerbstluftChain() as hc:
     for i in range(1,10):
         hc.add(str(i))
         hc.keybind(mod+str(i),'use_index '+str(i-1))
+        hc.keybind(mod+shift+str(i),'move_index '+str(i-1))
     #ditch the 'default' tag
     #unfortunately, this will have the side effect of switching to
     #the tag at the second index position, needs to be fixed
