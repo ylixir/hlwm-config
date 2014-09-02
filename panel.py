@@ -158,7 +158,7 @@ def herbst_event_loop():
     #emitted every n seconds
     with herbstluft.HerbstluftTimer(seconds=10) as hc_timer:
         #start the panel
-        dz2=Dzen2(panel_width,panel_height,bg_color=ink_black,fg_color=ink_white)
+        dz2=dzen2.Dzen2(panel_width,panel_height,bg_color=ink_black,fg_color=ink_white)
         dz2.start()
         #get the initial values for everything
         tags=hc.tag_status()

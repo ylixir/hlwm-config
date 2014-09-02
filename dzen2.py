@@ -11,7 +11,7 @@ def strip_unicode(s):
     #swap non latin stuff for M (a nice wide glyph hopefully)
     return ''.join([i if ord(i) < 128 else 'M' for i in text])
 
-class Dzen2(Bar):
+class Dzen2(bar.Bar):
     aligned_text = {'l':'','r':'','c':''}
     aligned_width = {'l':0,'r':50,'c':0}
     def __init__(self,width,height,x=0,y=0,font='-*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*',bg_color='#000000',fg_color='#ffffff'):

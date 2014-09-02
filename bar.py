@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf8 :
 
 #generic statusbar class
-class Bar(object)
+class Bar(object):
     #every function in this prototype/stub thing just calls this
     def unimplemented(self):
         raise Exception('That functionality has not been implemented for this status bar.')
