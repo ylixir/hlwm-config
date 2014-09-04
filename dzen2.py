@@ -6,7 +6,8 @@ import subprocess
 import unicodedata
 def strip_unicode(s):
     #strip accents
-    text=''.join(c for c in unicodedata.normalize('NFD', s)
+    normalized_s=unicodedata.normalize('NFD', str(s))
+    text=''.join(c for c in normalized_s
                   if unicodedata.category(c) != 'Mn')
     #swap non latin stuff for M (a nice wide glyph hopefully)
     return ''.join([i if ord(i) < 128 else 'M' for i in text])
@@ -69,12 +70,12 @@ class Dzen2(bar.Bar):
     def put_text(self,text):
         #self.is_running()
         #self.process.stdin.write(text)
-        self.aligned_text[self.alignment]+=text
+        self.aligned_text[self.alignment]+=str(text)
         #figure out the width of the text
         #textwidth doesn't seem to do well with accents and whatnot
         #so we try to handle that
         working=text
-        working=working.decode('utf-8')
+        #working=working.decode('utf-8')
         working=strip_unicode(working)
         working=working.encode('utf-8')
         self.aligned_width[self.alignment]+=int(subprocess.check_output([self.textwidth_path,self.font,working]))
@@ -95,20 +96,20 @@ class Dzen2(bar.Bar):
         #make sure dzen is running
         self.is_running()
         #write out  the left aligned text
-        self.process.stdin.write('^p(_LEFT)')
-        self.process.stdin.write(self.aligned_text['l'])
+        self.process.stdin.write(b'^p(_LEFT)')
+        self.process.stdin.write((self.aligned_text['l']).encode('utf-8'))
 
         #write out the centered text
-        self.process.stdin.write('^p(_CENTER)')
-        self.process.stdin.write('^p(-'+str(self.aligned_width['c']/2)+')')
-        self.process.stdin.write(self.aligned_text['c'])
+        self.process.stdin.write(b'^p(_CENTER)')
+        self.process.stdin.write(('^p(-'+str(self.aligned_width['c']/2)+')').encode('utf-8'))
+        self.process.stdin.write(self.aligned_text['c'].encode('utf-8'))
         #write out the right aligned text
-        self.process.stdin.write('^p(_RIGHT)')
-        self.process.stdin.write('^p(-'+str(self.aligned_width['r'])+')')
-        self.process.stdin.write(self.aligned_text['r'])
+        self.process.stdin.write(b'^p(_RIGHT)')
+        self.process.stdin.write(('^p(-'+str(self.aligned_width['r'])+')').encode('utf-8'))
+        self.process.stdin.write(self.aligned_text['r'].encode('utf-8'))
 
         #write out the newline and flush the buffer to display everything
-        self.process.stdin.write('\n')
+        self.process.stdin.write(b'\n')
         self.process.stdin.flush()
         #don't forget to reset our string buffers
         self.aligned_text = {'l':'','r':'','c':''}

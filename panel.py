@@ -22,8 +22,8 @@ ink_green='#409090'
 def get_date():
     return time.strftime('%a %d %b %Y %R %Z')
 def get_volume():
-    percent=re.compile('[0-9]+%')
-    mute=re.compile('\[o[nf]')
+    percent=re.compile(b'[0-9]+%')
+    mute=re.compile(b'\[o[nf]')
     result=subprocess.check_output(['amixer','get','Master'])
     vol=int(percent.search(result).group()[:-1])
     #is it muted?
@@ -33,7 +33,7 @@ def get_volume():
     return (vol,ismute)
 def get_brightness():
     try:
-        with file('/sys/class/backlight/acpi_video0/brightness') as f:
+        with open('/sys/class/backlight/acpi_video0/brightness','r') as f:
             brightness=f.read()
     except:
         brightness=0
@@ -41,13 +41,13 @@ def get_brightness():
 #returns (power_now,energy_now,energy_full_design,status)
 def get_battery():
     try:
-        with file('/sys/class/power_supply/BAT0/energy_now') as f:
+        with open('/sys/class/power_supply/BAT0/energy_now','r') as f:
             energy_now=int(f.read())
-        with file('/sys/class/power_supply/BAT0/power_now') as f:
+        with open('/sys/class/power_supply/BAT0/power_now','r') as f:
             power_now=int(f.read())
-        with file('/sys/class/power_supply/BAT0/energy_full_design') as f:
+        with open('/sys/class/power_supply/BAT0/energy_full_design','r') as f:
             energy_full_design=int(f.read())
-        with file('/sys/class/power_supply/BAT0/status') as f:
+        with open('/sys/class/power_supply/BAT0/status','r') as f:
             status=f.read().strip()
     except:
         energy_now=1
@@ -79,9 +79,10 @@ def print_tags(dz,tags):
                   '!':ink_red
                 }
     for i in tags:
-        dz.set_foreground_color(fg_color[i[0]])
-        dz.set_background_color(bg_color[i[0]])
-        dz.put_text(i[1:])
+        utf_i=i.decode('utf-8')
+        dz.set_foreground_color(fg_color[utf_i[:1]])
+        dz.set_background_color(bg_color[utf_i[:1]])
+        dz.put_text(utf_i[1:])
 
     dz.set_background_color()
     dz.set_foreground_color()
@@ -92,19 +93,19 @@ def print_window_title(dz,title):
 #battery is (power_now,energy_now,energy_full_design,status)
 def print_battery_status(dz,battery):
     dz.put_text('{:.2f}W '.format(float(battery[0])/1000000))
-    dz.put_text(str(battery[1]*100/battery[2])+'% ')
+    dz.put_text(str(battery[1]*100//battery[2])+'% ')
     #Discharging
     if 'D'==battery[3][0]:
-        time=str(battery[1]*60/battery[0]%60)
+        time=str(battery[1]*60//battery[0]%60)
         while len(time)<2:
             time='0'+time
-        time=str(battery[1]/battery[0])+':'+time
+        time=str(battery[1]//battery[0])+':'+time
     #Charging
     elif 'C'==battery[3][0]:
-        time=str((battery[2]-battery[1])*60/battery[0]%60)
+        time=str((battery[2]-battery[1])*60//battery[0]%60)
         while len(time)<2:
             time='0'+time
-        time=str((battery[2]-battery[1])/battery[0])+':'+time
+        time=str((battery[2]-battery[1])//battery[0])+':'+time
     #Full
     else:
         time=battery[3]
@@ -218,7 +219,7 @@ def herbst_event_loop():
 
             dz2.flush()
 
-            hc_event=hc_process.stdout.readline().strip()
+            hc_event=(hc_process.stdout.readline()).decode('utf-8').strip()
 
         dz2.stop()
     hc_process.terminate()
