@@ -33,8 +33,10 @@ def get_volume():
     return (vol,ismute)
 def get_brightness():
     try:
-        with open('/sys/class/backlight/acpi_video0/brightness','r') as f:
-            brightness=f.read()
+        with open('/sys/class/backlight/intel_backlight/brightness','r') as f:
+            brightness=int(f.read())*100
+        with open('/sys/class/backlight/intel_backlight/max_brightness','r') as f:
+            brightness//=int(f.read())
     except:
         brightness=0
     return int(brightness)
