@@ -19,7 +19,7 @@ class HerbstluftClient(object):
             hc_output=subprocess.check_output(['herbstclient']+command.split(' '))
         except CalledProcessError as e:
             hc_output=e.output
-            print 'herbstclient returned '+str(e.returncode)
+            print('herbstclient returned '+str(e.returncode))
 
         return hc_output
         #subprocess.call(['herbstclient']+command.split(' '))
