@@ -28,7 +28,7 @@ def get_volume():
     vol=int(percent.search(result).group()[:-1])
     #is it muted?
     ismute=False
-    if 'f'==mute.search(result).group()[-1:]:
+    if b'f'==mute.search(result).group()[-1:]:
         ismute=True
     return (vol,ismute)
 def get_brightness():
