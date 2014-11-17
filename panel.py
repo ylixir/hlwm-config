@@ -190,7 +190,7 @@ def herbst_event_loop():
                     command='+5'
                 elif 'down'==hc_event[11:]:
                     command='-5'
-                subprocess.call(['xbacklight',command])
+                #subprocess.call(['xbacklight',command])
                 brightness=get_brightness()
             elif 'focus_changed'==hc_event[:13] or 'window_title_changed'==hc_event[:20]:
                 splitted=hc_event.split('\t')

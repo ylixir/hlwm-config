@@ -141,6 +141,7 @@ with herbstluft.HerbstluftChain() as hc:
 import panel
 panel.spawn_panel()
 
-subprocess.call(['xli','-onroot','Wallpapers/good-morning.jpg'])
+subprocess.call(['xli','-onroot','Wallpapers/linux_arch_linux_gnulinux_1920_1366x768_miscellaneoushi.com.jpg'])
 subprocess.call(['xset','-dpms','s','off'])
 subprocess.call(['xrdb','.Xresources'])
+subprocess.call(['xhost','+local:'])
